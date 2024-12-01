@@ -38,8 +38,17 @@ This tutorial demonstrates how to build `Todo app` using **Drizzle ORM** with **
 - You should have installed the `dotenv` package for managing environment variables.
     <Npm>
   dotenv
-  </Npm>
+    </Npm>
 </Prerequisites>
+
+<Callout type="warning">
+  You can either set up your SvelteKit app either with the
+  [`sv`-CLI](https://svelte.dev/docs/cli) or scaffold it out yourself. This
+  guide will cover the setup with the CLI.
+
+If you set up your project with the CLI, you will have to change some files, like stated in the steps below. If not, just follow along.
+
+</Callout>
 
 ## Setup Neon and Drizzle ORM
 
@@ -80,23 +89,24 @@ export const db = drizzle({
     url: DATABASE_URL,
     authToken: DATABASE_AUTH_TOKEN,
   },
-  casing: "snake_case",
+  casing: "snake_case", // or set to "camelCase" if you prefer that.
+  // other options
 });
 ```
 
 #### Declare todo schema
 
 ```tsx copy filename="src/lib/server/db/schema.ts"
-import { integer, text, boolean, pgTable } from "drizzle-orm/pg-core";
+import { integer, text, boolean, pgTable, serial } from "drizzle-orm/pg-core";
 
 export const todo = pgTable("todo", {
-  id: integer("id").primaryKey(),
-  text: text("text").notNull(),
-  done: boolean("done").default(false).notNull(),
+  id: serial().primaryKey(),
+  text: text().notNull(),
+  completed: boolean().default(false).notNull(),
 });
 ```
 
-Here we define the **`todo`** table with fields **`id`**, **`text`**, and **`done`**, using data types from Drizzle ORM.
+Here we define the **`todo`** table with fields **`id`**, **`text`**, and **`completed`**, using data types from Drizzle ORM. You can specify different database field names in the function invocation.
 
 #### Setup Drizzle config file
 
@@ -111,12 +121,19 @@ import { defineConfig } from "drizzle-kit";
 config({ path: ".env" });
 
 export default defineConfig({
-  schema: "./src/db/schema.ts",
-  out: "./migrations",
-  dialect: "postgresql",
+  schema: "./src/lib/server/db/schema.ts",
+  out: "./drizzle"
+
   dbCredentials: {
-    url: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL,
+    authToken: process.env.DATABASE_AUTH_TOKEN,
   },
+
+  verbose: true,
+  strict: true,
+  driver: "turso",
+  dialect: "sqlite",
+  casing: "snake_case", // don't forget to add this
 });
 ```
 
